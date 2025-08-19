@@ -49,7 +49,10 @@ function numU(v: string | null) {
   return Number.isFinite(n) ? n : undefined;
 }
 function numD(v: string | null, d: number) {
-  const n = Number(v);
+  if (v == null) return d; // null/absent -> default
+  const s = v.trim();
+  if (s === '') return d;
+  const n = Number(s);
   return Number.isFinite(n) ? n : d;
 }
 function strU(v: string | null) {

@@ -65,9 +65,9 @@ describe('GET /api/reviews/hostaway', () => {
     expect(body.status).toBe('success');
     expect(body.count).toBe(3);
     expect(body.page).toBe(1);
-    expect(body.perPage).toBe(1);
+    expect(body.perPage).toBe(20);
     expect(Array.isArray(body.result)).toBe(true);
-    expect(body.result.length).toBe(1);
+    expect(body.result.length).toBe(3);
   });
 
   it('applies filters, sorting, and pagination', async () => {
