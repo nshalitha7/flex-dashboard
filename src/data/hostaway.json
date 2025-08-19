@@ -14,7 +14,21 @@
       "submittedAt": "2020-08-21 22:45:14",
       "guestName": "Shane Finkelstein",
       "listingName": "2B N1 A - 29 Shoreditch Heights",
-      "channel": "hostaway"
+      "channel": "hostaway",
+      "listingId": 1001
+    },
+    {
+      "id": 7454,
+      "type": "guest-to-host",
+      "status": "published",
+      "rating": 8,
+      "publicReview": "Great location and very clean.",
+      "reviewCategory": [{ "category": "cleanliness", "rating": 9 }],
+      "submittedAt": "2021-02-10 10:15:00",
+      "guestName": "Alex Doe",
+      "listingName": "3C Soho Loft",
+      "channel": "airbnb",
+      "listingId": 1002
     }
   ]
 }

@@ -1,26 +1,32 @@
 export type ReviewCategory = { category: string; rating: number | null };
 
+export type ReviewType = 'host-to-guest' | 'guest-to-host' | 'guest';
+export type ReviewStatus = 'published' | 'pending' | 'hidden' | 'archived';
+export type ReviewSource = 'hostaway' | 'google';
+
 export type NormalizedReview = {
   id: string;
-  source: 'hostaway' | 'google';
-  type: string;
-  status: string;
-  overallRating: number | null;
+  source: ReviewSource;
+  type: ReviewType;
+  status: ReviewStatus;
+  rating: number | null;
   categories: ReviewCategory[];
-  submittedAt: string; // ISO
-  authorName: string | null;
+  submittedAt: string; // ISO 8601
+  authorName: string | null; // reviewer / guest name
   listingId: string | null;
   listingName: string | null;
-  channel: string | null;
-  content: string | null;
+  channel: string; // hostaway / airbnb / booking / google
+  content: string; // review body
 };
 
 export type FilterQuery = {
   minRating?: number;
   channel?: string;
-  type?: string;
+  type?: ReviewType;
+  listingName?: string;
+  search?: string;
   from?: string; // yyyy-mm-dd
   to?: string; // yyyy-mm-dd
-  listingName?: string;
-  sort?: 'newest' | 'oldest' | 'rating';
 };
+
+export type SortKey = 'newest' | 'oldest' | 'rating';
