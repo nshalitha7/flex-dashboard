@@ -52,7 +52,7 @@ export function normalizeHostaway(json: unknown): NormalizedReview[] {
 // Filtering/Sorting/Bucketing
 export function filterReviews(list: NormalizedReview[], q: FilterQuery = {}) {
   const fromTs = q.from ? new Date(q.from).getTime() : null;
-  const toTs = q.to ? new Date(q.to).getTime() : null;
+  const toTs = q.to ? new Date(q.to).getTime() + 24 * 60 * 60 * 1000 : null;
   const channel = q.channel?.toLowerCase();
   const type = q.type;
   const name = q.listingName?.toLowerCase();
@@ -72,7 +72,7 @@ export function filterReviews(list: NormalizedReview[], q: FilterQuery = {}) {
 
     const t = new Date(r.submittedAt).getTime();
     if (fromTs && t < fromTs) return false;
-    if (toTs && t > toTs) return false;
+    if (toTs && t >= toTs) return false;
 
     return true;
   });
@@ -118,8 +118,9 @@ function isNum(x: unknown): x is number {
 
 function toIso(d: unknown): string {
   if (typeof d === 'string') {
-    const isoLike = d.replace(' ', 'T');
-    const dt = new Date(isoLike);
+    const isoLike = d.includes('T') ? d : d.replace(' ', 'T');
+    const withZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(isoLike) ? isoLike : `${isoLike}Z`;
+    const dt = new Date(withZone);
     return Number.isNaN(+dt) ? new Date().toISOString() : dt.toISOString();
   }
   if (d instanceof Date) return d.toISOString();

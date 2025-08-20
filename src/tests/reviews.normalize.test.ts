@@ -1,5 +1,6 @@
 import mock from '@/data/hostaway.json';
 import { normalizeHostaway, filterReviews, sortReviews, bucketByMonth } from '@/domain/reviews';
+import * as process from 'node:process';
 
 describe('normalizeHostaway', () => {
   const norm = normalizeHostaway(mock as unknown);
@@ -35,6 +36,18 @@ describe('normalizeHostaway', () => {
     if (buckets.length) {
       expect(buckets[0]).toHaveProperty('month');
       expect(buckets[0]).toHaveProperty('count');
+    }
+  });
+
+  it('parses submittedAt as UTC regardless of local TZ', () => {
+    const prev = process.env.TZ;
+    process.env.TZ = 'America/New_York';
+    try {
+      const raw = { status: 'success', result: [{ submittedAt: '2020-08-21 00:00:00' }] };
+      const [r] = normalizeHostaway(raw);
+      expect(r.submittedAt).toBe('2020-08-21T00:00:00.000Z');
+    } finally {
+      process.env.TZ = prev;
     }
   });
 });
