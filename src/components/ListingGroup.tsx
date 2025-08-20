@@ -1,17 +1,21 @@
 'use client';
 
+import { useState } from 'react';
+import Link from 'next/link';
 import type { NormalizedReview } from '@/domain/reviews';
 import TrendChart from './TrendChart';
-import ReviewCard from './ReviewCard';
 import { bucketByMonth } from '@/domain/reviews';
-import { useState } from 'react';
+import ReviewCard from './ReviewCard';
 
 type Props = {
   listing: string;
   reviews: NormalizedReview[];
-  approvals: Record<string, boolean>;
-  onToggle: (id: string) => void;
+  approvals: Record<string, boolean>; // composite keyed map
+  onToggle: (compositeKey: string) => void; // composite key toggler
 };
+
+const keyOf = (listingId: number | string | null | undefined, reviewId: string | number) =>
+  `${listingId ?? ''}:${reviewId}`;
 
 function avg(nums: (number | null | undefined)[]) {
   const vals = nums.filter((x): x is number => typeof x === 'number');
@@ -34,21 +38,29 @@ function categoryAverages(reviews: NormalizedReview[]) {
 }
 
 export default function ListingGroup({ listing, reviews, approvals, onToggle }: Props) {
-  const average = avg(reviews.map((r) => r.rating)) ?? 0;
+  const average = (avg(reviews.map((r) => r.rating)) ?? 0).toFixed(2);
   const monthly = bucketByMonth(reviews);
   const categories = categoryAverages(reviews)
     .sort((a, b) => (b.avg ?? 0) - (a.avg ?? 0))
     .slice(0, 6);
+
   const [showAll, setShowAll] = useState(false);
   const visible = showAll ? reviews : reviews.slice(0, 4);
+  const listingId = reviews[0]?.listingId;
 
   return (
     <div className="border rounded-lg p-4 space-y-4">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-        <h2 className="text-lg font-semibold">{listing}</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-semibold">{listing}</h2>
+          {typeof listingId !== 'undefined' && (
+            <Link href={`/properties/${listingId}`} className="text-sm text-blue-600 underline">
+              View public page
+            </Link>
+          )}
+        </div>
         <div className="text-sm">
-          Avg Rating: <span className="font-medium">{average.toFixed(2)}</span> · {reviews.length}{' '}
-          reviews
+          Avg Rating: <span className="font-medium">{average}</span> · {reviews.length} reviews
         </div>
       </div>
 
@@ -68,9 +80,12 @@ export default function ListingGroup({ listing, reviews, approvals, onToggle }: 
       </div>
 
       <div className="grid md:grid-cols-2 gap-3">
-        {visible.map((r) => (
-          <ReviewCard key={r.id} review={r} approved={!!approvals[r.id]} onToggle={onToggle} />
-        ))}
+        {visible.map((r) => {
+          const key = keyOf(r.listingId, r.id);
+          return (
+            <ReviewCard key={r.id} review={r} approved={!!approvals[key]} onToggle={onToggle} />
+          );
+        })}
       </div>
 
       {reviews.length > visible.length && (

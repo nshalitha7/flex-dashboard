@@ -1,12 +1,12 @@
 'use client';
 
+import useSWR from 'swr';
 import useSWRInfinite from 'swr/infinite';
 import { useEffect, useMemo, useState } from 'react';
 import { fetchJSON } from '@/lib/fetcher';
 import type { NormalizedReview, SortKey, ReviewType } from '@/domain/reviews';
 import DashboardFilters, { Filters } from '@/components/DashboardFilters';
 import ListingGroup from '@/components/ListingGroup';
-import { loadApprovals, toggleApproval, type ApprovalsMap } from '@/lib/storage';
 
 type ApiResponse = {
   status: 'success' | 'error';
@@ -15,8 +15,20 @@ type ApiResponse = {
   page: number;
   perPage: number;
   result: NormalizedReview[];
-  total?: number; // items across all pages
+  total?: number; // items across all pages (after filters)
 };
+
+type ApprovalRecord = {
+  listingId: number;
+  reviewId: string | number;
+  approved: boolean;
+  approvedAt: string;
+};
+
+// approvals map is keyed by `${listingId}:${reviewId}`
+type ApprovalsMap = Record<string, boolean>;
+const keyOf = (listingId: number | string | null | undefined, reviewId: string | number) =>
+  `${listingId ?? ''}:${reviewId}`;
 
 function buildQueryBase(f: Filters) {
   const params = new URLSearchParams();
@@ -28,6 +40,9 @@ function buildQueryBase(f: Filters) {
   if (f.to) params.set('to', f.to);
   if (f.search) params.set('search', f.search);
   if (f.sort) params.set('sort', f.sort);
+  if (f.category) params.set('category', f.category);
+  if (f.categoryMin !== '' && f.categoryMin != null)
+    params.set('categoryMin', String(f.categoryMin));
   return params.toString();
 }
 
@@ -41,18 +56,30 @@ export default function DashboardPage() {
     to: '',
     search: '',
     sort: 'newest' as SortKey,
+    category: '',
+    categoryMin: '',
   });
+
+  // load approvals
+  const { data: approvalsRes } = useSWR<{ status: 'success'; result: ApprovalRecord[] }>(
+    '/api/approvals',
+    fetchJSON,
+  );
 
   const [approvals, setApprovals] = useState<ApprovalsMap>({});
   useEffect(() => {
-    setApprovals(loadApprovals());
-  }, []);
+    if (!approvalsRes?.result) return;
+    const m: ApprovalsMap = {};
+    for (const a of approvalsRes.result) {
+      m[keyOf(a.listingId, a.reviewId)] = !!a.approved;
+    }
+    setApprovals(m);
+  }, [approvalsRes]);
 
   const base = buildQueryBase(filters);
   const perPage = 20;
 
   const getKey = (pageIndex: number, previousPageData: ApiResponse | null) => {
-    // if previous page had fewer than perPage items, we've reached the end
     if (previousPageData && previousPageData.result.length < perPage) return null;
     const page = pageIndex + 1;
     return `/api/reviews/hostaway?${base}&page=${page}&perPage=${perPage}`;
@@ -64,12 +91,14 @@ export default function DashboardPage() {
     {
       revalidateFirstPage: true,
       keepPreviousData: true,
+      revalidateOnFocus: false,
+      dedupingInterval: 3000,
     },
   );
 
   const flat: NormalizedReview[] = useMemo(() => (data ?? []).flatMap((d) => d.result), [data]);
 
-  // build listing groups from the reviews fetched so far
+  // build listing groups
   const grouped = useMemo(() => {
     const map = new Map<string, { listingId: string | number | null; items: NormalizedReview[] }>();
     for (const r of flat) {
@@ -77,7 +106,6 @@ export default function DashboardPage() {
       if (!map.has(key)) map.set(key, { listingId: r.listingId ?? null, items: [] });
       map.get(key)!.items.push(r);
     }
-    // sort by listing name
     return [...map.entries()]
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([listing, obj]) => ({ listing, listingId: obj.listingId, reviews: obj.items }));
@@ -87,7 +115,16 @@ export default function DashboardPage() {
   const last = data?.[data?.length - 1];
   const isEnd = !!last && last.result.length < perPage;
 
-  const onToggle = (id: string) => setApprovals((curr) => toggleApproval(curr, id));
+  const onToggle = (compositeKey: string) =>
+    setApprovals((curr) => ({ ...curr, [compositeKey]: !curr[compositeKey] }));
+
+  // KPI bar
+  const uniqueListings = grouped.length;
+  const rated = flat.filter((r) => typeof r.rating === 'number');
+  const overallAvg = rated.length
+    ? (rated.reduce((s, r) => s + (r.rating as number), 0) / rated.length).toFixed(2)
+    : '–';
+  const approvedCount = Object.values(approvals).filter(Boolean).length;
 
   return (
     <main className="p-6 max-w-6xl mx-auto space-y-6">
@@ -102,13 +139,35 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <DashboardFilters
-        value={filters}
-        onChange={(next) => {
-          setSize(1); // reset pagination when filters change
-          setFilters(next);
-        }}
-      />
+      {/* KPI bar */}
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="border rounded p-3">
+          <div className="text-xs text-gray-500">Listings</div>
+          <div className="text-lg font-medium">{uniqueListings}</div>
+        </div>
+        <div className="border rounded p-3">
+          <div className="text-xs text-gray-500">Avg rating</div>
+          <div className="text-lg font-medium">{overallAvg}</div>
+        </div>
+        <div className="border rounded p-3">
+          <div className="text-xs text-gray-500">Approved</div>
+          <div className="text-lg font-medium">{approvedCount}</div>
+        </div>
+        <div className="border rounded p-3">
+          <div className="text-xs text-gray-500">Loaded now</div>
+          <div className="text-lg font-medium">{flat.length}</div>
+        </div>
+      </section>
+
+      <div className="top-4 z-10 border rounded p-3">
+        <DashboardFilters
+          value={filters}
+          onChange={(next) => {
+            setSize(1); // reset pagination when filters change
+            setFilters(next);
+          }}
+        />
+      </div>
 
       {error && (
         <div className="border border-red-200 bg-red-50 text-red-700 rounded p-3">
@@ -134,7 +193,6 @@ export default function DashboardPage() {
         />
       ))}
 
-      {/* Load more */}
       {flat.length > 0 && (
         <div className="flex items-center justify-center pt-2">
           <button

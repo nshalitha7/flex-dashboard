@@ -11,6 +11,9 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const listingIdQ = numU(searchParams.get('listingId'));
+    const category = strU(searchParams.get('category'));
+    const categoryMin = numU(searchParams.get('categoryMin'));
+
     const q = {
       minRating: numU(searchParams.get('minRating')),
       channel: strU(searchParams.get('channel')),
@@ -29,14 +32,23 @@ export async function GET(req: Request) {
     if (listingIdQ != null) {
       filtered = filtered.filter((r) => (r.listingId ? Number(r.listingId) : NaN) === listingIdQ);
     }
+    if (category) {
+      filtered = filtered.filter((r) =>
+        (r.categories ?? []).some(
+          (c) =>
+            c.category === category &&
+            (categoryMin == null || (typeof c.rating === 'number' && c.rating >= categoryMin)),
+        ),
+      );
+    }
 
     const sorted = sortReviews(filtered, sort);
     const { slice, total, page: p, perPage: pp } = paginate(sorted, page, perPage);
 
     return Response.json({
       status: 'success',
-      count: slice.length, // total after filters (before pagination)
-      total, // total filtered items (for convenience)
+      count: slice.length, // // items in this page
+      total, // all items after filters
       page: p,
       perPage: pp,
       result: slice,

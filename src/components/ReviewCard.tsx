@@ -7,37 +7,38 @@ import { fmtDate } from '@/lib/format';
 type Props = {
   review: NormalizedReview;
   approved: boolean;
-  onToggle: (id: string) => void;
+  onToggle: (compositeKey: string) => void; // `${listingId}:${reviewId}`
 };
+
+const keyOf = (listingId: number | string | null | undefined, reviewId: string | number) =>
+  `${listingId ?? ''}:${reviewId}`;
 
 export default function ReviewCard({ review, approved, onToggle }: Props) {
   const [saving, setSaving] = useState(false);
 
   async function handleToggle(next: boolean) {
-    // optimistic UI first
-    onToggle(review.id);
+    const compositeKey = keyOf(review.listingId, review.id);
+
+    onToggle(compositeKey);
 
     setSaving(true);
     try {
-      // persist to server so public page can read it
       const res = await fetch('/api/approvals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          listingId: review.listingId, // <- required by the API
+          listingId: review.listingId,
           reviewId: review.id,
           approved: next,
         }),
       });
-
       if (!res.ok) {
-        // revert if server failed
-        onToggle(review.id);
+        // revert on failure
+        onToggle(compositeKey);
         console.error('Failed to save approval', await res.text());
       }
     } catch (e) {
-      // revert if network error
-      onToggle(review.id);
+      onToggle(compositeKey);
       console.error('Failed to save approval', e);
     } finally {
       setSaving(false);

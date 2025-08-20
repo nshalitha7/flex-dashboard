@@ -12,6 +12,8 @@ export type Filters = {
   to: string;
   search: string;
   sort: SortKey;
+  category: string;
+  categoryMin: number | '';
 };
 
 type Props = {
@@ -19,12 +21,24 @@ type Props = {
   onChange: (next: Filters) => void;
 };
 
+const CATEGORIES = [
+  '',
+  'cleanliness',
+  'communication',
+  'respect_house_rules',
+  'check_in',
+  'location',
+  'value',
+];
+
 export default function DashboardFilters({ value, onChange }: Props) {
   const id = useId();
   const set = <K extends keyof Filters>(k: K, v: Filters[K]) => onChange({ ...value, [k]: v });
 
+  const ctl = 'border rounded px-3 h-10';
+
   return (
-    <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-3">
+    <div className="grid items-end md:grid-cols-3 lg:grid-cols-6 gap-3">
       <div className="flex flex-col">
         <label htmlFor={`${id}-min`} className="text-sm">
           Min rating
@@ -36,7 +50,7 @@ export default function DashboardFilters({ value, onChange }: Props) {
           max={10}
           value={value.minRating}
           onChange={(e) => set('minRating', e.target.value === '' ? '' : Number(e.target.value))}
-          className="border rounded px-3 py-2"
+          className={ctl}
           placeholder="e.g. 8"
         />
       </div>
@@ -49,7 +63,7 @@ export default function DashboardFilters({ value, onChange }: Props) {
           id={`${id}-listing`}
           value={value.listingName}
           onChange={(e) => set('listingName', e.target.value)}
-          className="border rounded px-3 py-2"
+          className={ctl}
           placeholder="Search listing name"
         />
       </div>
@@ -62,7 +76,7 @@ export default function DashboardFilters({ value, onChange }: Props) {
           id={`${id}-channel`}
           value={value.channel}
           onChange={(e) => set('channel', e.target.value)}
-          className="border rounded px-3 py-2"
+          className={ctl}
         >
           <option value="">All</option>
           <option value="hostaway">Hostaway</option>
@@ -80,7 +94,7 @@ export default function DashboardFilters({ value, onChange }: Props) {
           id={`${id}-type`}
           value={value.type}
           onChange={(e) => set('type', e.target.value as Filters['type'])}
-          className="border rounded px-3 py-2"
+          className={ctl}
         >
           <option value="">All</option>
           <option value="guest">guest</option>
@@ -90,28 +104,36 @@ export default function DashboardFilters({ value, onChange }: Props) {
       </div>
 
       <div className="flex flex-col">
-        <label htmlFor={`${id}-from`} className="text-sm">
-          From
+        <label htmlFor={`${id}-cat`} className="text-sm">
+          Category
         </label>
-        <input
-          id={`${id}-from`}
-          type="date"
-          value={value.from}
-          onChange={(e) => set('from', e.target.value)}
-          className="border rounded px-3 py-2"
-        />
+        <select
+          id={`${id}-cat`}
+          value={value.category}
+          onChange={(e) => set('category', e.target.value)}
+          className={ctl}
+        >
+          {CATEGORIES.map((c) => (
+            <option key={c || 'all'} value={c}>
+              {c || 'All'}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="flex flex-col">
-        <label htmlFor={`${id}-to`} className="text-sm">
-          To
+        <label htmlFor={`${id}-catmin`} className="text-sm">
+          Category min
         </label>
         <input
-          id={`${id}-to`}
-          type="date"
-          value={value.to}
-          onChange={(e) => set('to', e.target.value)}
-          className="border rounded px-3 py-2"
+          id={`${id}-catmin`}
+          type="number"
+          min={0}
+          max={10}
+          value={value.categoryMin}
+          onChange={(e) => set('categoryMin', e.target.value === '' ? '' : Number(e.target.value))}
+          className={ctl}
+          placeholder="e.g. 8"
         />
       </div>
 
@@ -123,8 +145,8 @@ export default function DashboardFilters({ value, onChange }: Props) {
           id={`${id}-search`}
           value={value.search}
           onChange={(e) => set('search', e.target.value)}
-          className="border rounded px-3 py-2 w-full"
-          placeholder="Search review content/author"
+          className={`${ctl} w-full`}
+          placeholder="Search in content"
         />
       </div>
 
@@ -136,7 +158,7 @@ export default function DashboardFilters({ value, onChange }: Props) {
           id={`${id}-sort`}
           value={value.sort}
           onChange={(e) => set('sort', e.target.value as SortKey)}
-          className="border rounded px-3 py-2"
+          className={ctl}
         >
           <option value="newest">Newest</option>
           <option value="oldest">Oldest</option>

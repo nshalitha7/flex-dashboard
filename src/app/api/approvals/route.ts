@@ -5,8 +5,9 @@ import type { ApprovalRecord } from '@/domain/reviews/types';
 export async function GET(req: NextRequest) {
   const store = await approvalsStore();
   const { searchParams } = new URL(req.url);
-  const listingId = Number(searchParams.get('listingId'));
-  if (Number.isFinite(listingId)) {
+  const listingIdParam = searchParams.get('listingId');
+  const listingId = Number(listingIdParam);
+  if (listingIdParam != null && listingIdParam != '' && Number.isFinite(listingId)) {
     const list = await store.listByListing(listingId);
     return NextResponse.json({ status: 'success', result: list });
   }
