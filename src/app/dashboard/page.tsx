@@ -7,6 +7,7 @@ import { fetchJSON } from '@/lib/fetcher';
 import type { NormalizedReview, SortKey, ReviewType } from '@/domain/reviews';
 import DashboardFilters, { Filters } from '@/components/DashboardFilters';
 import ListingGroup from '@/components/ListingGroup';
+import reviewKey from '@/lib/review-key';
 
 type ApiResponse = {
   status: 'success' | 'error';
@@ -27,8 +28,6 @@ type ApprovalRecord = {
 
 // approvals map is keyed by `${listingId}:${reviewId}`
 type ApprovalsMap = Record<string, boolean>;
-const keyOf = (listingId: number | string | null | undefined, reviewId: string | number) =>
-  `${listingId ?? ''}:${reviewId}`;
 
 function buildQueryBase(f: Filters) {
   const params = new URLSearchParams();
@@ -41,8 +40,11 @@ function buildQueryBase(f: Filters) {
   if (f.search) params.set('search', f.search);
   if (f.sort) params.set('sort', f.sort);
   if (f.category) params.set('category', f.category);
-  if (f.categoryMin !== '' && f.categoryMin != null)
-    params.set('categoryMin', String(f.categoryMin));
+  if (f.category) {
+    params.set('category', f.category);
+    if (f.categoryMin !== '' && f.categoryMin != null)
+      params.set('categoryMin', String(f.categoryMin));
+  }
   return params.toString();
 }
 
@@ -71,7 +73,7 @@ export default function DashboardPage() {
     if (!approvalsRes?.result) return;
     const m: ApprovalsMap = {};
     for (const a of approvalsRes.result) {
-      m[keyOf(a.listingId, a.reviewId)] = !!a.approved;
+      m[reviewKey(a.listingId, a.reviewId)] = !!a.approved;
     }
     setApprovals(m);
   }, [approvalsRes]);

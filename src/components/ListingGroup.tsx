@@ -6,6 +6,7 @@ import type { NormalizedReview } from '@/domain/reviews';
 import TrendChart from './TrendChart';
 import { bucketByMonth } from '@/domain/reviews';
 import ReviewCard from './ReviewCard';
+import { reviewKey } from '@/lib/review-key';
 
 type Props = {
   listing: string;
@@ -13,9 +14,6 @@ type Props = {
   approvals: Record<string, boolean>; // composite keyed map
   onToggle: (compositeKey: string) => void; // composite key toggler
 };
-
-const keyOf = (listingId: number | string | null | undefined, reviewId: string | number) =>
-  `${listingId ?? ''}:${reviewId}`;
 
 function avg(nums: (number | null | undefined)[]) {
   const vals = nums.filter((x): x is number => typeof x === 'number');
@@ -81,20 +79,20 @@ export default function ListingGroup({ listing, reviews, approvals, onToggle }: 
 
       <div className="grid md:grid-cols-2 gap-3">
         {visible.map((r) => {
-          const key = keyOf(r.listingId, r.id);
+          const key = reviewKey(r.listingId, r.id);
           return (
             <ReviewCard key={r.id} review={r} approved={!!approvals[key]} onToggle={onToggle} />
           );
         })}
       </div>
 
-      {reviews.length > visible.length && (
+      {reviews.length > 4 && (
         <div className="text-center">
           <button
             className="px-3 py-2 rounded border bg-white hover:bg-gray-50"
-            onClick={() => setShowAll(true)}
+            onClick={() => setShowAll((s) => !s)}
           >
-            Show {reviews.length - visible.length} more in this listing
+            {showAll ? 'Show less' : `Show ${reviews.length - 4} more in this listing`}
           </button>
         </div>
       )}

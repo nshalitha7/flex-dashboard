@@ -29,7 +29,10 @@ export type HostawayResponse = z.infer<typeof HostawayResponseSchema>;
 // Normalization
 export function normalizeHostaway(json: unknown): NormalizedReview[] {
   const parsed = HostawayResponseSchema.safeParse(json);
-  const rows: HostawayReviewRaw[] = parsed.success && parsed.data.result ? parsed.data.result : [];
+  if (!parsed.success || !parsed.data.result) {
+    throw new Error('Invalid Hostaway response');
+  }
+  const rows: HostawayReviewRaw[] = parsed.data.result;
 
   return rows.map(
     (r): NormalizedReview => ({
@@ -70,7 +73,8 @@ export function filterReviews(list: NormalizedReview[], q: FilterQuery = {}) {
       if (!blob.includes(search)) return false;
     }
 
-    const t = new Date(r.submittedAt).getTime();
+    const t = Date.parse(r.submittedAt);
+    if (Number.isNaN(t)) return false;
     if (fromTs && t < fromTs) return false;
     if (toTs && t >= toTs) return false;
 
@@ -121,10 +125,10 @@ function toIso(d: unknown): string {
     const isoLike = d.includes('T') ? d : d.replace(' ', 'T');
     const withZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(isoLike) ? isoLike : `${isoLike}Z`;
     const dt = new Date(withZone);
-    return Number.isNaN(+dt) ? new Date().toISOString() : dt.toISOString();
+    return Number.isNaN(+dt) ? '' : dt.toISOString();
   }
-  if (d instanceof Date) return d.toISOString();
-  return new Date().toISOString();
+  if (d instanceof Date && !Number.isNaN(+d)) return d.toISOString();
+  return '';
 }
 
 function rnd() {

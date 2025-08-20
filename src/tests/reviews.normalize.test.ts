@@ -50,4 +50,8 @@ describe('normalizeHostaway', () => {
       process.env.TZ = prev;
     }
   });
+
+  it('throws on invalid hostaway responses', () => {
+    expect(() => normalizeHostaway({ foo: 'bar' })).toThrow('Invalid Hostaway response');
+  });
 });

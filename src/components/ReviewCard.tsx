@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { NormalizedReview } from '@/domain/reviews';
 import { fmtDate } from '@/lib/format';
+import { reviewKey } from '@/lib/review-key';
 
 type Props = {
   review: NormalizedReview;
@@ -10,18 +11,17 @@ type Props = {
   onToggle: (compositeKey: string) => void; // `${listingId}:${reviewId}`
 };
 
-const keyOf = (listingId: number | string | null | undefined, reviewId: string | number) =>
-  `${listingId ?? ''}:${reviewId}`;
-
 export default function ReviewCard({ review, approved, onToggle }: Props) {
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleToggle(next: boolean) {
-    const compositeKey = keyOf(review.listingId, review.id);
+    const compositeKey = reviewKey(review.listingId, review.id);
 
     onToggle(compositeKey);
 
     setSaving(true);
+    setError(null);
     try {
       const res = await fetch('/api/approvals', {
         method: 'POST',
@@ -35,10 +35,12 @@ export default function ReviewCard({ review, approved, onToggle }: Props) {
       if (!res.ok) {
         // revert on failure
         onToggle(compositeKey);
+        setError('Failed to save approval');
         console.error('Failed to save approval', await res.text());
       }
     } catch (e) {
       onToggle(compositeKey);
+      setError('Failed to save approval');
       console.error('Failed to save approval', e);
     } finally {
       setSaving(false);
@@ -70,6 +72,7 @@ export default function ReviewCard({ review, approved, onToggle }: Props) {
           {saving ? 'Saving…' : 'Show on website'}
         </label>
       </div>
+      {error && <div className="text-red-600 text-sm">{error}</div>}
     </div>
   );
 }

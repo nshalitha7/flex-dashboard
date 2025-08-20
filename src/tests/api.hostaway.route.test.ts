@@ -46,6 +46,20 @@ jest.mock('@/domain/reviews', () => {
         channel: 'hostaway',
         content: 'Fantastic!',
       },
+      {
+        id: '4',
+        source: 'hostaway',
+        type: 'guest',
+        status: 'published',
+        rating: 8,
+        categories: [],
+        submittedAt: new Date('2024-03-01T00:00:00Z').toISOString(),
+        authorName: 'Dina',
+        listingId: 'x-1',
+        listingName: 'Camden Flat',
+        channel: 'hostaway',
+        content: 'Nice place.',
+      },
     ]),
   };
 });
@@ -63,11 +77,11 @@ describe('GET /api/reviews/hostaway', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.status).toBe('success');
-    expect(body.count).toBe(3);
+    expect(body.count).toBe(4);
     expect(body.page).toBe(1);
     expect(body.perPage).toBe(20);
     expect(Array.isArray(body.result)).toBe(true);
-    expect(body.result.length).toBe(3);
+    expect(body.result.length).toBe(4);
   });
 
   it('applies filters, sorting, and pagination', async () => {
@@ -91,5 +105,15 @@ describe('GET /api/reviews/hostaway', () => {
       expect(body.result[0].listingName.toLowerCase()).toContain('shoreditch');
       expect(body.result[0].rating).toBeGreaterThanOrEqual(8);
     }
+  });
+
+  it('filters by string listingId values', async () => {
+    const url = new URL('http://localhost/api/reviews/hostaway');
+    url.searchParams.set('listingId', 'x-1');
+    const res = await GET(makeReq(url.toString()));
+    const body = await res.json();
+    expect(body.status).toBe('success');
+    expect(body.result.length).toBe(1);
+    expect(body.result[0].listingId).toBe('x-1');
   });
 });

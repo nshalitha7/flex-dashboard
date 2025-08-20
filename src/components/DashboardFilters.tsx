@@ -121,21 +121,25 @@ export default function DashboardFilters({ value, onChange }: Props) {
         </select>
       </div>
 
-      <div className="flex flex-col">
-        <label htmlFor={`${id}-catmin`} className="text-sm">
-          Category min
-        </label>
-        <input
-          id={`${id}-catmin`}
-          type="number"
-          min={0}
-          max={10}
-          value={value.categoryMin}
-          onChange={(e) => set('categoryMin', e.target.value === '' ? '' : Number(e.target.value))}
-          className={ctl}
-          placeholder="e.g. 8"
-        />
-      </div>
+      {value.category && (
+        <div className="flex flex-col">
+          <label htmlFor={`${id}-catmin`} className="text-sm">
+            Category min
+          </label>
+          <input
+            id={`${id}-catmin`}
+            type="number"
+            min={0}
+            max={10}
+            value={value.categoryMin}
+            onChange={(e) =>
+              set('categoryMin', e.target.value === '' ? '' : Number(e.target.value))
+            }
+            className={ctl}
+            placeholder="e.g. 8"
+          />
+        </div>
+      )}
 
       <div className="flex flex-col md:col-span-2">
         <label htmlFor={`${id}-search`} className="text-sm">

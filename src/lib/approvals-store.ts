@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { ApprovalRecord, ApprovalKey } from '@/domain/reviews/types';
 import * as process from 'node:process';
+import reviewKey from '@/lib/review-key';
 
 type Store = {
   loadAll(): Promise<ApprovalRecord[]>;
@@ -12,7 +13,7 @@ type Store = {
 
 // Inmemory (always available)
 const mem: { map: Map<string, ApprovalRecord> } = { map: new Map() };
-const keyOf = (k: ApprovalKey) => `${k.listingId}:${k.reviewId}`;
+const keyOf = (k: ApprovalKey) => reviewKey(k.listingId, k.reviewId);
 
 // Vercel KV
 async function tryKV() {
