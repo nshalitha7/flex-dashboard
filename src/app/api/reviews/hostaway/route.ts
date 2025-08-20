@@ -10,6 +10,7 @@ import type { ReviewType } from '@/domain/reviews';
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
+    const listingIdQ = numU(searchParams.get('listingId'));
     const q = {
       minRating: numU(searchParams.get('minRating')),
       channel: strU(searchParams.get('channel')),
@@ -24,7 +25,11 @@ export async function GET(req: Request) {
     const perPage = numD(searchParams.get('perPage'), 20);
 
     const all = await fetchHostawayNormalized();
-    const filtered = filterReviews(all, q);
+    let filtered = filterReviews(all, q);
+    if (listingIdQ != null) {
+      filtered = filtered.filter((r) => (r.listingId ? Number(r.listingId) : NaN) === listingIdQ);
+    }
+
     const sorted = sortReviews(filtered, sort);
     const { slice, total, page: p, perPage: pp } = paginate(sorted, page, perPage);
 

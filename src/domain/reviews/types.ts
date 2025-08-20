@@ -30,3 +30,7 @@ export type FilterQuery = {
 };
 
 export type SortKey = 'newest' | 'oldest' | 'rating';
+
+// approvals - manager selections
+export type ApprovalKey = { listingId: number; reviewId: number | string };
+export type ApprovalRecord = ApprovalKey & { approved: boolean; approvedAt: string };
