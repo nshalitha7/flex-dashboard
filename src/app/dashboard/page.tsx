@@ -1,6 +1,6 @@
 'use client';
 
-import useSWR from 'swr';
+import useSWRInfinite from 'swr/infinite';
 import { useEffect, useMemo, useState } from 'react';
 import { fetchJSON } from '@/lib/fetcher';
 import type { NormalizedReview, SortKey, ReviewType } from '@/domain/reviews';
@@ -11,14 +11,14 @@ import { loadApprovals, toggleApproval, type ApprovalsMap } from '@/lib/storage'
 type ApiResponse = {
   status: 'success' | 'error';
   message?: string;
-  count: number;
+  count: number; // items in this page
   page: number;
   perPage: number;
   result: NormalizedReview[];
-  total?: number;
+  total?: number; // items across all pages
 };
 
-function buildQuery(f: Filters) {
+function buildQueryBase(f: Filters) {
   const params = new URLSearchParams();
   if (f.minRating !== '' && f.minRating != null) params.set('minRating', String(f.minRating));
   if (f.listingName) params.set('listingName', f.listingName);
@@ -28,9 +28,6 @@ function buildQuery(f: Filters) {
   if (f.to) params.set('to', f.to);
   if (f.search) params.set('search', f.search);
   if (f.sort) params.set('sort', f.sort);
-
-  // load a lot at once, UI is still grouped
-  params.set('perPage', '100');
   return params.toString();
 }
 
@@ -47,25 +44,48 @@ export default function DashboardPage() {
   });
 
   const [approvals, setApprovals] = useState<ApprovalsMap>({});
-
-  // load approvals
   useEffect(() => {
     setApprovals(loadApprovals());
   }, []);
 
-  const qs = buildQuery(filters);
-  const { data, error, isLoading } = useSWR<ApiResponse>(`/api/reviews/hostaway?${qs}`, fetchJSON);
+  const base = buildQueryBase(filters);
+  const perPage = 20;
 
+  const getKey = (pageIndex: number, previousPageData: ApiResponse | null) => {
+    // if previous page had fewer than perPage items, we've reached the end
+    if (previousPageData && previousPageData.result.length < perPage) return null;
+    const page = pageIndex + 1;
+    return `/api/reviews/hostaway?${base}&page=${page}&perPage=${perPage}`;
+  };
+
+  const { data, error, isLoading, size, setSize, isValidating } = useSWRInfinite<ApiResponse>(
+    getKey,
+    fetchJSON,
+    {
+      revalidateFirstPage: true,
+      keepPreviousData: true,
+    },
+  );
+
+  const flat: NormalizedReview[] = useMemo(() => (data ?? []).flatMap((d) => d.result), [data]);
+
+  // build listing groups from the reviews fetched so far
   const grouped = useMemo(() => {
-    const map = new Map<string, NormalizedReview[]>();
-    for (const r of data?.result ?? []) {
+    const map = new Map<string, { listingId: string | number | null; items: NormalizedReview[] }>();
+    for (const r of flat) {
       const key = r.listingName || 'Unknown Listing';
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(r);
+      if (!map.has(key)) map.set(key, { listingId: r.listingId ?? null, items: [] });
+      map.get(key)!.items.push(r);
     }
+    // sort by listing name
+    return [...map.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([listing, obj]) => ({ listing, listingId: obj.listingId, reviews: obj.items }));
+  }, [flat]);
 
-    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-  }, [data]);
+  const totalAfterFilters = data?.[0]?.total ?? 0;
+  const last = data?.[data?.length - 1];
+  const isEnd = !!last && last.result.length < perPage;
 
   const onToggle = (id: string) => setApprovals((curr) => toggleApproval(curr, id));
 
@@ -74,11 +94,21 @@ export default function DashboardPage() {
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Flex Reviews Dashboard</h1>
         <div className="text-sm opacity-70">
-          {isLoading ? 'Loading…' : error ? 'Error loading' : `${data?.count ?? 0} reviews`}
+          {isLoading && !data
+            ? 'Loading…'
+            : error
+              ? 'Error loading'
+              : `${totalAfterFilters} reviews`}
         </div>
       </header>
 
-      <DashboardFilters value={filters} onChange={setFilters} />
+      <DashboardFilters
+        value={filters}
+        onChange={(next) => {
+          setSize(1); // reset pagination when filters change
+          setFilters(next);
+        }}
+      />
 
       {error && (
         <div className="border border-red-200 bg-red-50 text-red-700 rounded p-3">
@@ -86,25 +116,36 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {!error && (isLoading || !data) && (
+      {!error && isLoading && !data && (
         <div className="border rounded p-4 bg-gray-50">Loading reviews…</div>
       )}
 
-      {!isLoading && data && data.result.length === 0 && (
+      {data && flat.length === 0 && (
         <div className="border rounded p-4 bg-yellow-50">No reviews match the current filters.</div>
       )}
 
-      {!isLoading &&
-        data &&
-        grouped.map(([listing, reviews]) => (
-          <ListingGroup
-            key={listing}
-            listing={listing}
-            reviews={reviews}
-            approvals={approvals}
-            onToggle={onToggle}
-          />
-        ))}
+      {grouped.map(({ listing, listingId, reviews }) => (
+        <ListingGroup
+          key={`${listing}-${listingId ?? 'n/a'}`}
+          listing={listing}
+          reviews={reviews}
+          approvals={approvals}
+          onToggle={onToggle}
+        />
+      ))}
+
+      {/* Load more */}
+      {flat.length > 0 && (
+        <div className="flex items-center justify-center pt-2">
+          <button
+            className="px-4 py-2 rounded border bg-white hover:bg-gray-50 disabled:opacity-50"
+            disabled={isEnd || isValidating}
+            onClick={() => setSize(size + 1)}
+          >
+            {isEnd ? 'No more reviews' : isValidating ? 'Loading…' : 'Load more'}
+          </button>
+        </div>
+      )}
     </main>
   );
 }

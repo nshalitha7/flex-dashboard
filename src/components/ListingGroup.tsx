@@ -4,6 +4,7 @@ import type { NormalizedReview } from '@/domain/reviews';
 import TrendChart from './TrendChart';
 import ReviewCard from './ReviewCard';
 import { bucketByMonth } from '@/domain/reviews';
+import { useState } from 'react';
 
 type Props = {
   listing: string;
@@ -38,6 +39,8 @@ export default function ListingGroup({ listing, reviews, approvals, onToggle }: 
   const categories = categoryAverages(reviews)
     .sort((a, b) => (b.avg ?? 0) - (a.avg ?? 0))
     .slice(0, 6);
+  const [showAll, setShowAll] = useState(false);
+  const visible = showAll ? reviews : reviews.slice(0, 4);
 
   return (
     <div className="border rounded-lg p-4 space-y-4">
@@ -65,10 +68,21 @@ export default function ListingGroup({ listing, reviews, approvals, onToggle }: 
       </div>
 
       <div className="grid md:grid-cols-2 gap-3">
-        {reviews.map((r) => (
+        {visible.map((r) => (
           <ReviewCard key={r.id} review={r} approved={!!approvals[r.id]} onToggle={onToggle} />
         ))}
       </div>
+
+      {reviews.length > visible.length && (
+        <div className="text-center">
+          <button
+            className="px-3 py-2 rounded border bg-white hover:bg-gray-50"
+            onClick={() => setShowAll(true)}
+          >
+            Show {reviews.length - visible.length} more in this listing
+          </button>
+        </div>
+      )}
     </div>
   );
 }

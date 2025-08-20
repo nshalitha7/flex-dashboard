@@ -4,7 +4,7 @@ import type { FilterQuery, NormalizedReview, ReviewType, SortKey } from './types
 // Hostaway raw schemas
 export const HostawayReviewRawSchema = z.object({
   id: z.string().or(z.number()).optional(),
-  type: z.enum(['host-to-guest', 'guest-to-host']).optional(),
+  type: z.enum(['host-to-guest', 'guest-to-host', 'guest']).optional(),
   status: z.enum(['published', 'pending', 'hidden', 'archived']).optional(),
   rating: z.number().nullable().optional(),
   publicReview: z.string().optional(),

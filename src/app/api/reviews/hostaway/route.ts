@@ -35,7 +35,7 @@ export async function GET(req: Request) {
 
     return Response.json({
       status: 'success',
-      count: filtered.length, // total after filters (before pagination)
+      count: slice.length, // total after filters (before pagination)
       total, // total filtered items (for convenience)
       page: p,
       perPage: pp,

@@ -2,7 +2,7 @@ export type ReviewCategory = { category: string; rating: number | null };
 
 export type ReviewType = 'host-to-guest' | 'guest-to-host' | 'guest';
 export type ReviewStatus = 'published' | 'pending' | 'hidden' | 'archived';
-export type ReviewSource = 'hostaway' | 'google';
+export type ReviewSource = 'hostaway' | 'google' | 'booking' | 'airbnb';
 
 export type NormalizedReview = {
   id: string;
