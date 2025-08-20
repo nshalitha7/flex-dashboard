@@ -12,7 +12,7 @@ type Review = {
   type: string;
   rating: number | null;
   content: string;
-  guestName?: string | null;
+  authorName?: string | null;
   submittedAt?: string | null;
 };
 
@@ -128,7 +128,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ listi
             {approved.map((r) => (
               <article key={String(r.id)} className="border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-medium">{r.guestName ?? 'Guest'}</h3>
+                  <h3 className="font-medium">{r.authorName ?? 'Guest'}</h3>
                   {typeof r.rating === 'number' && (
                     <span className="text-sm text-gray-600">Rating: {r.rating}</span>
                   )}
