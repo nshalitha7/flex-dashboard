@@ -64,12 +64,12 @@ export default function ReviewCard({ review, approved, onToggle }: Props) {
         <label className="ml-auto flex items-center gap-2">
           <input
             type="checkbox"
-            aria-label="Show on website"
+            aria-label="Show on review page"
             checked={approved}
             disabled={saving}
             onChange={(e) => handleToggle(e.target.checked)}
           />
-          {saving ? 'Saving…' : 'Show on website'}
+          {saving ? 'Saving…' : 'Show on review page'}
         </label>
       </div>
       {error && <div className="text-red-600 text-sm">{error}</div>}
