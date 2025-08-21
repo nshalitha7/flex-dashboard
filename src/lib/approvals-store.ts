@@ -131,6 +131,21 @@ let storePromise: Promise<Store> | null = null;
 export async function approvalsStore(): Promise<Store> {
   if (storePromise) return storePromise;
   storePromise = (async () => {
+    // override via env
+    const override = process.env.APPROVALS_STORE;
+    if (override) {
+      switch (override) {
+        case 'kv': {
+          const store = await tryKV();
+          if (store) return store;
+          break; // fall back if KV not configured
+        }
+        case 'file':
+          return fileStore;
+        case 'memory':
+          return memoryStore;
+      }
+    }
     // prefer KV when configured (production), else local file (dev), else memory
     const kv = await tryKV();
     if (kv) return kv;
