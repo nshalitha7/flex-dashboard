@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { ApprovalRecord, ApprovalKey } from '@/domain/reviews/types';
 import * as process from 'node:process';
-import reviewKey from '@/lib/review-key';
+import { reviewKey } from '@/lib/review-key';
 
 type Store = {
   loadAll(): Promise<ApprovalRecord[]>;
@@ -12,7 +12,7 @@ type Store = {
 };
 
 // Inmemory (always available)
-const mem: { map: Map<string, ApprovalRecord> } = { map: new Map() };
+const mem = new Map<string, ApprovalRecord>();
 const keyOf = (k: ApprovalKey) => reviewKey(k.listingId, k.reviewId);
 
 // Vercel KV
@@ -95,16 +95,16 @@ const fileStore: Store = {
 // Memory fallback
 const memoryStore: Store = {
   async loadAll() {
-    return Array.from(mem.map.values());
+    return Array.from(mem.values());
   },
   async upsert(rec) {
-    mem.map.set(keyOf(rec), rec);
+    mem.set(keyOf(rec), rec);
   },
   async listByListing(listingId) {
-    return Array.from(mem.map.values()).filter((a) => a.listingId === listingId);
+    return Array.from(mem.values()).filter((a) => a.listingId === listingId);
   },
   async isApproved(k) {
-    const v = mem.map.get(keyOf(k));
+    const v = mem.get(keyOf(k));
     return v?.approved === true;
   },
 };

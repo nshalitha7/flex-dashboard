@@ -4,5 +4,3 @@ export function reviewKey(
 ): string {
   return `${listingId ?? ''}:${reviewId}`;
 }
-
-export default reviewKey;

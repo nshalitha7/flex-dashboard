@@ -7,7 +7,8 @@ import { fetchJSON } from '@/lib/fetcher';
 import type { NormalizedReview, SortKey, ReviewType } from '@/domain/reviews';
 import DashboardFilters, { Filters } from '@/components/DashboardFilters';
 import ListingGroup from '@/components/ListingGroup';
-import reviewKey from '@/lib/review-key';
+import { reviewKey } from '@/lib/review-key';
+import type { ApprovalRecord } from '@/domain/reviews';
 
 type ApiResponse = {
   status: 'success' | 'error';
@@ -17,13 +18,6 @@ type ApiResponse = {
   perPage: number;
   result: NormalizedReview[];
   total?: number; // items across all pages (after filters)
-};
-
-type ApprovalRecord = {
-  listingId: number;
-  reviewId: string | number;
-  approved: boolean;
-  approvedAt: string;
 };
 
 // approvals map is keyed by `${listingId}:${reviewId}`
@@ -39,7 +33,6 @@ function buildQueryBase(f: Filters) {
   if (f.to) params.set('to', f.to);
   if (f.search) params.set('search', f.search);
   if (f.sort) params.set('sort', f.sort);
-  if (f.category) params.set('category', f.category);
   if (f.category) {
     params.set('category', f.category);
     if (f.categoryMin !== '' && f.categoryMin != null)

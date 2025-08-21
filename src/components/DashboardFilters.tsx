@@ -35,7 +35,7 @@ export default function DashboardFilters({ value, onChange }: Props) {
   const id = useId();
   const set = <K extends keyof Filters>(k: K, v: Filters[K]) => onChange({ ...value, [k]: v });
 
-  const ctl = 'border rounded px-3 h-10';
+  const inputClass = 'border rounded px-3 h-10';
 
   return (
     <div className="grid items-end md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -50,7 +50,7 @@ export default function DashboardFilters({ value, onChange }: Props) {
           max={10}
           value={value.minRating}
           onChange={(e) => set('minRating', e.target.value === '' ? '' : Number(e.target.value))}
-          className={ctl}
+          className={inputClass}
           placeholder="e.g. 8"
         />
       </div>
@@ -63,7 +63,7 @@ export default function DashboardFilters({ value, onChange }: Props) {
           id={`${id}-listing`}
           value={value.listingName}
           onChange={(e) => set('listingName', e.target.value)}
-          className={ctl}
+          className={inputClass}
           placeholder="Search listing name"
         />
       </div>
@@ -76,7 +76,7 @@ export default function DashboardFilters({ value, onChange }: Props) {
           id={`${id}-channel`}
           value={value.channel}
           onChange={(e) => set('channel', e.target.value)}
-          className={ctl}
+          className={inputClass}
         >
           <option value="">All</option>
           <option value="hostaway">Hostaway</option>
@@ -94,7 +94,7 @@ export default function DashboardFilters({ value, onChange }: Props) {
           id={`${id}-type`}
           value={value.type}
           onChange={(e) => set('type', e.target.value as Filters['type'])}
-          className={ctl}
+          className={inputClass}
         >
           <option value="">All</option>
           <option value="guest">guest</option>
@@ -111,7 +111,7 @@ export default function DashboardFilters({ value, onChange }: Props) {
           id={`${id}-cat`}
           value={value.category}
           onChange={(e) => set('category', e.target.value)}
-          className={ctl}
+          className={inputClass}
         >
           {CATEGORIES.map((c) => (
             <option key={c || 'all'} value={c}>
@@ -135,7 +135,7 @@ export default function DashboardFilters({ value, onChange }: Props) {
             onChange={(e) =>
               set('categoryMin', e.target.value === '' ? '' : Number(e.target.value))
             }
-            className={ctl}
+            className={inputClass}
             placeholder="e.g. 8"
           />
         </div>
@@ -149,7 +149,7 @@ export default function DashboardFilters({ value, onChange }: Props) {
           id={`${id}-search`}
           value={value.search}
           onChange={(e) => set('search', e.target.value)}
-          className={`${ctl} w-full`}
+          className={`${inputClass} w-full`}
           placeholder="Search in content"
         />
       </div>
@@ -162,7 +162,7 @@ export default function DashboardFilters({ value, onChange }: Props) {
           id={`${id}-sort`}
           value={value.sort}
           onChange={(e) => set('sort', e.target.value as SortKey)}
-          className={ctl}
+          className={inputClass}
         >
           <option value="newest">Newest</option>
           <option value="oldest">Oldest</option>
