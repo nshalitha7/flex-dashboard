@@ -18,13 +18,13 @@ A dashboard to manage guest reviews across sources (Hostaway, Google Places), wi
   - `/properties/[listingId]` shows **only approved** reviews in a simple layout consistent with Flex’s property detail style.
 
 - **APIs**
-  - `GET /api/reviews/hostaway` – normalized Hostaway (mock) data
+  - `GET /api/reviews/hostaway` – normalized Hostaway reviews via API (falls back to mock)
   - `GET /api/reviews/google` – normalized Google Places reviews
   - `GET|POST /api/approvals` – persist manager approvals (Vercel KV → file → memory)
 
 - **Robust data handling**
   - Normalization, filtering, sorting, and server side pagination
-  - Defensive Zod parsing for Hostaway mock data
+  - Defensive Zod parsing for Hostaway data
   - Clear separation of domain types & services
 
 ---
@@ -65,12 +65,16 @@ Create `.env.local`:
 # APPROVALS_STORE can be: 'kv' | 'file' | 'memory'
 APPROVALS_STORE=file
 
+# Hostaway API credentials (falls back to mock data if absent)
+HOSTAWAY_API_KEY={ACCOUNT_ID}
+HOSTAWAY_ACCOUNT_ID={API_KEY}
+
 # For Vercel KV (production), set these in Vercel’s Project Settings:
 # KV_REST_API_URL=
 # KV_REST_API_TOKEN=
 
 # Google Places
-# GOOGLE_API_KEY={YOUR_SERVER_SIDE_KEY}
+# GOOGLE_API_KEY={SERVER_SIDE_KEY}
 # GOOGLE_PLACE_ID={DEFAULT_PLACE_ID}
 ```
 
@@ -108,7 +112,7 @@ src/
     api/
       approvals/route.ts          # GET/POST approvals
       reviews/
-        hostaway/route.ts         # Hostaway mocked → normalized
+        hostaway/route.ts         # Hostaway API → normalized (fallback to mock)
         google/route.ts           # Google Places → normalized
     dashboard/page.tsx            # Manager dashboard (SWR Infinite)
     properties/[listingId]/page.tsx  # Public property page (approved only)
@@ -164,7 +168,8 @@ All endpoints return JSON with this paging shape:
 
 ### `GET /api/reviews/hostaway`
 
-Returns normalized reviews from Hostaway **mock** data.
+Returns normalized reviews from the Hostaway API using an access token.
+Falls back to bundled mock data if the API is unavailable or returns no reviews.
 
 ### `GET /api/reviews/google`
 
@@ -232,7 +237,7 @@ type NormalizedReview = {
 
 - Category filter doesn’t apply to Google (no category breakdown in Places reviews).
 - Google Places returns **few** reviews, for complete history use Google Business Profile APIs.
-- Mock Hostaway data is used. sandbox Hostaway API has no reviews.
+- Hostaway sandbox has no reviews at the moment, mock data is used when the API fails or returns none.
 
 ---
 
