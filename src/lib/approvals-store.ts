@@ -28,18 +28,34 @@ async function tryKV() {
         cache: 'no-store',
       });
       if (!r.ok) return [];
+      let data: { result?: string[] } | null;
+      try {
+        data = (await r.json()) as { result?: string[] } | null;
+      } catch {
+        return [];
+      }
+      const result = data?.result;
+      if (!Array.isArray(result)) return [];
 
-      // KV returns { [key: string]: stringifiedApproval }
-      const obj = (await r.json()) as Record<string, string> | null;
-
-      if (!obj) return [];
-      return Object.values(obj).map((s) => JSON.parse(s) as ApprovalRecord);
+      const approvals: ApprovalRecord[] = [];
+      for (let i = 0; i < result.length; i += 2) {
+        const value = result[i + 1];
+        if (typeof value !== 'string') continue;
+        try {
+          let parsed: unknown = JSON.parse(value); // first parse
+          if (typeof parsed === 'string') parsed = JSON.parse(parsed); // handle double encoding
+          approvals.push(parsed as ApprovalRecord);
+        } catch {
+          // ignore malformed entries
+        }
+      }
+      return approvals;
     },
     async upsert(rec: ApprovalRecord) {
       await fetch(`${url}/hset/approvals/${keyOf(rec)}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(JSON.stringify(rec)),
+        body: JSON.stringify(rec),
       });
     },
     async listByListing(listingId: number) {
