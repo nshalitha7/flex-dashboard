@@ -135,34 +135,39 @@ export default function DashboardPage() {
       </header>
 
       {/* KPI bar */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="border rounded p-3">
-          <div className="text-xs text-gray-500">Listings</div>
-          <div className="text-lg font-medium">{uniqueListings}</div>
-        </div>
-        <div className="border rounded p-3">
-          <div className="text-xs text-gray-500">Avg rating</div>
-          <div className="text-lg font-medium">{overallAvg}</div>
-        </div>
-        <div className="border rounded p-3">
-          <div className="text-xs text-gray-500">Approved</div>
-          <div className="text-lg font-medium">{approvedCount}</div>
-        </div>
-        <div className="border rounded p-3">
-          <div className="text-xs text-gray-500">Loaded now</div>
-          <div className="text-lg font-medium">{flat.length}</div>
+      <section className="space-y-2">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-gray-50 p-4 rounded shadow">
+          <div className="border rounded p-3">
+            <div className="text-xs text-gray-500">Listings</div>
+            <div className="text-lg font-medium">{uniqueListings}</div>
+          </div>
+          <div className="border rounded p-3">
+            <div className="text-xs text-gray-500">Avg rating</div>
+            <div className="text-lg font-medium">{overallAvg}</div>
+          </div>
+          <div className="border rounded p-3">
+            <div className="text-xs text-gray-500">Approved</div>
+            <div className="text-lg font-medium">{approvedCount}</div>
+          </div>
+          <div className="border rounded p-3">
+            <div className="text-xs text-gray-500">Loaded now</div>
+            <div className="text-lg font-medium">{flat.length}</div>
+          </div>
         </div>
       </section>
 
-      <div className="top-4 z-10 border rounded p-3">
-        <DashboardFilters
-          value={filters}
-          onChange={(next) => {
-            setSize(1); // reset pagination when filters change
-            setFilters(next);
-          }}
-        />
-      </div>
+      {/* Filters */}
+      <section className="space-y-2">
+        <div className="top-4 z-10 border rounded p-4 bg-white shadow">
+          <DashboardFilters
+            value={filters}
+            onChange={(next) => {
+              setSize(1); // reset pagination when filters change
+              setFilters(next);
+            }}
+          />
+        </div>
+      </section>
 
       {error && (
         <div className="border border-red-200 bg-red-50 text-red-700 rounded p-3">

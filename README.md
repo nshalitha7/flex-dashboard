@@ -89,6 +89,14 @@ npm run dev
 
 For deployed demo visit **https://flex-dashboard-zeta.vercel.app**.
 
+### 5) Test & Lint
+
+```bash
+npm test          # run Jest tests
+npm run lint      # run ESLint
+npm run typecheck # verify TypeScript types
+```
+
 ---
 
 ## How to use
